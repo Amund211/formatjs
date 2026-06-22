@@ -25,6 +25,11 @@ def _oxc_transpiler_impl(ctx):
         # Remove package prefix if present
         if relative_path.startswith(package_prefix):
             relative_path = relative_path[len(package_prefix):]
+        else:
+            external_package_prefix = "/" + package_prefix
+            external_package_index = relative_path.find(external_package_prefix)
+            if external_package_index != -1:
+                relative_path = relative_path[external_package_index + len(external_package_prefix):]
 
         # Always output .js files regardless of whether input is .ts or .tsx
         if relative_path.endswith(".tsx"):

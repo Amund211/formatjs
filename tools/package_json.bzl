@@ -1,5 +1,6 @@
 """Generate npm package.json files from Bazel dependency labels."""
 
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("//tools:dist_packages_registry.bzl", "RELEASE_PLEASE_NPM_PACKAGES")
 load("//tools:index.bzl", "ts_run_binary")
 load("//tools:package_json_policy.bzl", "PACKAGE_JSON_SORT_EXPORTS", "PACKAGE_JSON_SORT_FIRST")
@@ -322,22 +323,45 @@ def formatjs_package_json(
         tags = tags,
     )
 
+    root_package_json_copy = "%s_root_package_json" % name
+    copy_file(
+        name = root_package_json_copy,
+        src = root_package_json,
+        out = "%s.root-package.json" % name,
+        tags = tags,
+    )
+
+    root_package_json_path = "$(rootpath :%s)" % root_package_json_copy
+    metadata_path = "$(rootpath :%s)" % metadata_name
+    out_path = "$(rootpath %s)" % out
+    repo_name = native.repo_name()
+    if repo_name:
+        external_package_path = "external/%s/%s" % (repo_name, native.package_name())
+        root_package_json_path = "%s/%s.root-package.json" % (external_package_path, name)
+        metadata_path = "%s/%s.json" % (external_package_path, metadata_name)
+        out_path = "%s/%s" % (external_package_path, out)
+
+    execution_requirements = {"no-sandbox": "1"} if repo_name else {}
+
     ts_run_binary(
         name = name,
         srcs = [
-            root_package_json,
+            ":%s" % root_package_json_copy,
             ":%s" % metadata_name,
             "//:node_modules/minimist",
         ],
         outs = [out],
         args = [
             "--root-package-json",
-            "$(rootpath %s)" % root_package_json,
+            root_package_json_path,
             "--metadata",
-            "$(rootpath :%s)" % metadata_name,
+            metadata_path,
             "--out",
-            "$(rootpath %s)" % out,
+            out_path,
         ],
+        copy_srcs_to_bin = False,
+        execution_requirements = execution_requirements,
+        patch_node_fs = False,
         tags = tags,
         tool = "//tools:generate-package-json",
         visibility = visibility,

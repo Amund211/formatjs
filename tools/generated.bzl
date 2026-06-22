@@ -24,6 +24,10 @@ def generate_package_file(name, src, entry_point = None, tool = None, chdir = No
     kwargs = {}
     if visibility:
         kwargs["visibility"] = visibility
+    out_path = "$(rootpath %s)" % src
+    repo_name = native.repo_name()
+    if repo_name:
+        out_path = "external/%s/%s/%s" % (repo_name, native.package_name(), src)
     ts_run_binary(
         name = name,
         outs = [src],
@@ -31,7 +35,7 @@ def generate_package_file(name, src, entry_point = None, tool = None, chdir = No
         tool = tool,
         args = args + [
             "--out",
-            "$(rootpath %s)" % src,
+            out_path,
         ],
         chdir = chdir,
         srcs = data + [

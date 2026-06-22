@@ -2,6 +2,15 @@ load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("//packages/intl-segmenter:index.bzl", "unicode_file_name")
 load("//tools:generated.bzl", "formatjs_generated_package", "generate_package_file")
 
+REPOSITORY_NAME = repository_name()
+
+REPO_NAME = REPOSITORY_NAME[1:] if REPOSITORY_NAME and REPOSITORY_NAME != "@" else None
+
+EXTERNAL_PACKAGE_PATH = "external/%s/%s" % (
+    REPO_NAME,
+    package_name(),
+) if REPO_NAME else None
+
 generate_package_file(
     name = "unicode_regex",
     src = "regex.ts",
@@ -45,7 +54,7 @@ generate_package_file(
     src = "emoji-data.ts",
     args = [
         "--emojiDataPath",
-        "$(rootpath :emoji-data)",
+        "%s/emoji-data.txt" % EXTERNAL_PACKAGE_PATH if REPO_NAME else "$(rootpath :emoji-data)",
     ],
     data = [
         ":emoji-data",
@@ -78,7 +87,16 @@ UNICODE_FILES = [
 generate_package_file(
     name = "unicode_cldr_segmentation_rules",
     src = "cldr-segmentation-rules.ts",
-    args = ["--unicodeFiles=$(rootpath :%s)" % unicode_file_name(f) for f in UNICODE_FILES],
+    args = [
+        "--unicodeFiles=%s/%s.txt" % (
+            EXTERNAL_PACKAGE_PATH,
+            unicode_file_name(f),
+        )
+        for f in UNICODE_FILES
+    ] if REPO_NAME else [
+        "--unicodeFiles=$(rootpath :%s)" % unicode_file_name(f)
+        for f in UNICODE_FILES
+    ],
     data =
         [":%s" % unicode_file_name(f) for f in UNICODE_FILES] + [
             "//:node_modules/@types/regenerate",

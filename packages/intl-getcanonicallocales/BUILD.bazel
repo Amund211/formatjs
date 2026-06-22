@@ -15,6 +15,12 @@ ENTRY_POINTS = [
     "should-polyfill.ts",
 ]
 
+REPOSITORY_NAME = repository_name()
+
+REPO_NAME = REPOSITORY_NAME[1:] if REPOSITORY_NAME and REPOSITORY_NAME != "@" else None
+
+ISO4217_XML = "external/%s/packages/utils/iso4217.xml" % REPO_NAME if REPO_NAME else "$(rootpath //packages/utils:iso4217.xml)"
+
 formatjs_library(
     name = "intl-getcanonicallocales",
     package_name = "@formatjs/intl-getcanonicallocales",
@@ -139,7 +145,7 @@ generate_package_file(
     src = "currencyMinorUnits.ts",
     args = [
         "--input",
-        "$(rootpath //packages/utils:iso4217.xml)",
+        ISO4217_XML,
     ],
     data = [
         "//:node_modules/fast-xml-parser",

@@ -26,12 +26,16 @@ def rolldown_bundle(name, entry_point, srcs = [], output = None, deps = [], exte
 
     effective_output = output or (name + ".js")
     entry_file_name = effective_output.split("/")[-1]
+    package_path = native.package_name()
+    repo_name = native.repo_name()
+    output_package_path = "external/%s/%s" % (repo_name, package_path) if repo_name else package_path
+    output_path = "%s/%s" % (output_package_path, effective_output) if repo_name else "$(rootpath %s)" % effective_output
 
     args = [
         "--input",
-        native.package_name() + "/" + entry_point,
+        output_package_path + "/" + entry_point,
         "--output",
-        "$(rootpath %s)" % effective_output,
+        output_path,
         "--format",
         format,
         "--target",
@@ -61,7 +65,7 @@ def rolldown_bundle(name, entry_point, srcs = [], output = None, deps = [], exte
         # Build args with --output (script derives dir from it when --dts) or --outDir
         dir_args = [
             "--input",
-            native.package_name() + "/" + entry_point,
+            output_package_path + "/" + entry_point,
             "--format",
             format,
             "--target",
@@ -70,10 +74,10 @@ def rolldown_bundle(name, entry_point, srcs = [], output = None, deps = [], exte
 
         if dts:
             # Use --output so the script can derive the output dir
-            dir_args += ["--output", native.package_name() + "/" + name + "/" + effective_output]
+            dir_args += ["--output", output_package_path + "/" + name + "/" + effective_output]
             dir_args += ["--dts"]
         else:
-            dir_args += ["--outDir", native.package_name() + "/" + name]
+            dir_args += ["--outDir", output_package_path + "/" + name]
 
         for ext in external:
             dir_args += ["--external", ext]

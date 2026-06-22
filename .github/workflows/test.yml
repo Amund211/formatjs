@@ -73,6 +73,7 @@ jobs:
       matrix:
         example:
           - rescripts
+          - react18-typecheck
           - strict-locale-type
           - strict-message-types
 
